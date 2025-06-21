@@ -1,79 +1,135 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <title>نموذج تخزين بيانات</title>
+  <meta charset="UTF-8">
+  <title>جدول الأرقام</title>
   <style>
     body {
       font-family: Arial;
       background-color: #f0f0f0;
       text-align: center;
-      padding: 50px;
+      padding: 30px;
     }
-    input, button {
-      font-size: 18px;
+    h2 {
+      color: #333;
+    }
+    table {
+      width: 90%;
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ccc;
       padding: 10px;
-      margin: 10px;
+      font-size: 18px;
+    }
+    input {
+      width: 60px;
+      padding: 5px;
+      font-size: 16px;
+      text-align: center;
+    }
+    button {
+      margin-top: 10px;
+      font-size: 18px;
+      padding: 8px 20px;
     }
   </style>
 </head>
 <body>
-  <h2>📩 أدخل بياناتك</h2>
-  <input type="text" id="inputData" placeholder="نص البيانات..." />
-  <br>
-  <button onclick="addData()">📤 أرسل البيانات</button>
+  <h2>📋 جدول الأرقام المحفوظة</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+      <!-- سيتم تعبئته من JSON -->
+    </tbody>
+  </table>
+
+  <h3>➕ أضف صفًا جديدًا</h3>
+  <div>
+    <input type="number" id="a" placeholder="A">
+    <input type="number" id="b" placeholder="B">
+    <input type="number" id="c" placeholder="C">
+    <input type="number" id="d" placeholder="D">
+    <input type="number" id="e" placeholder="E">
+  </div>
+  <button onclick="saveRow()">💾 حفظ الصف</button>
 
   <script>
     const owner = 'gity678';
     const repo = 'static';
     const path = 'data.json';
     const branch = 'main';
-    const token = 'hp_IjpVsLqgSpiUFfoDviYWpYeONINI573Oo1yF'; // مؤقت
+    const token = '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';
 
-    async function addData() {
-      const input = document.getElementById('inputData').value.trim();
-      if (!input) return alert('📝 الرجاء إدخال نص أولاً.');
+    const tableBody = document.getElementById('tableBody');
+
+    // عرض محتويات JSON في الجدول
+    async function loadData() {
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
+      const res = await fetch(url, {
+        headers: { Authorization: `token ${token}` }
+      });
+      const data = await res.json();
+      const content = atob(data.content.replace(/\n/g, ''));
+      const jsonData = JSON.parse(content);
+
+      tableBody.innerHTML = '';
+      jsonData.forEach(row => {
+        const tr = document.createElement('tr');
+        ['a', 'b', 'c', 'd', 'e'].forEach(key => {
+          const td = document.createElement('td');
+          td.textContent = row[key];
+          tr.appendChild(td);
+        });
+        tableBody.appendChild(tr);
+      });
+      return { jsonData, sha: data.sha };
+    }
+
+    async function saveRow() {
+      const row = {
+        a: parseInt(document.getElementById('a').value) || 0,
+        b: parseInt(document.getElementById('b').value) || 0,
+        c: parseInt(document.getElementById('c').value) || 0,
+        d: parseInt(document.getElementById('d').value) || 0,
+        e: parseInt(document.getElementById('e').value) || 0
+      };
 
       try {
-        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
+        const { jsonData, sha } = await loadData();
+        jsonData.push(row);
+        const updated = btoa(JSON.stringify(jsonData, null, 2));
 
-        const res = await fetch(apiUrl, {
-          headers: { Authorization: `token ${token}` }
-        });
-
-        if (!res.ok) throw new Error('📂 فشل في جلب الملف.');
-
-        const file = await res.json();
-        const content = atob(file.content.replace(/\n/g, ''));
-        const json = JSON.parse(content);
-
-        json.push({ text: input, date: new Date().toISOString() });
-
-        const updatedContent = btoa(JSON.stringify(json, null, 2));
-
-        const updateRes = await fetch(apiUrl, {
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
           method: 'PUT',
           headers: {
             Authorization: `token ${token}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            message: `🆕 إضافة: ${input}`,
-            content: updatedContent,
-            sha: file.sha,
-            branch
+            message: "🔁 إضافة صف جديد",
+            content: updated,
+            sha: sha,
+            branch: branch
           })
         });
 
-        if (!updateRes.ok) throw new Error('❌ فشل في رفع البيانات.');
-
-        alert('✅ تم حفظ البيانات!');
-        document.getElementById('inputData').value = '';
-      } catch (e) {
-        alert('خطأ: ' + e.message);
+        if (!res.ok) throw new Error("فشل الحفظ في GitHub");
+        alert('✅ تم حفظ الصف الجديد!');
+        ['a','b','c','d','e'].forEach(id => document.getElementById(id).value = '');
+        loadData();
+      } catch (err) {
+        alert("❌ خطأ: " + err.message);
       }
     }
+
+    // عند تحميل الصفحة
+    loadData();
   </script>
 </body>
 </html>
-

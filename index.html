@@ -1,1 +1,79 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>نموذج تخزين بيانات</title>
+  <style>
+    body {
+      font-family: Arial;
+      background-color: #f0f0f0;
+      text-align: center;
+      padding: 50px;
+    }
+    input, button {
+      font-size: 18px;
+      padding: 10px;
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>📩 أدخل بياناتك</h2>
+  <input type="text" id="inputData" placeholder="نص البيانات..." />
+  <br>
+  <button onclick="addData()">📤 أرسل البيانات</button>
+
+  <script>
+    const owner = 'gity678';
+    const repo = 'static';
+    const path = 'data.json';
+    const branch = 'main';
+    const token = 'hp_IjpVsLqgSpiUFfoDviYWpYeONINI573Oo1yF'; // مؤقت
+
+    async function addData() {
+      const input = document.getElementById('inputData').value.trim();
+      if (!input) return alert('📝 الرجاء إدخال نص أولاً.');
+
+      try {
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
+
+        const res = await fetch(apiUrl, {
+          headers: { Authorization: `token ${token}` }
+        });
+
+        if (!res.ok) throw new Error('📂 فشل في جلب الملف.');
+
+        const file = await res.json();
+        const content = atob(file.content.replace(/\n/g, ''));
+        const json = JSON.parse(content);
+
+        json.push({ text: input, date: new Date().toISOString() });
+
+        const updatedContent = btoa(JSON.stringify(json, null, 2));
+
+        const updateRes = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            Authorization: `token ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `🆕 إضافة: ${input}`,
+            content: updatedContent,
+            sha: file.sha,
+            branch
+          })
+        });
+
+        if (!updateRes.ok) throw new Error('❌ فشل في رفع البيانات.');
+
+        alert('✅ تم حفظ البيانات!');
+        document.getElementById('inputData').value = '';
+      } catch (e) {
+        alert('خطأ: ' + e.message);
+      }
+    }
+  </script>
+</body>
+</html>
 

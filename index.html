@@ -2,88 +2,120 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>إدخال بيانات JSON</title>
+  <title>جدول بيانات</title>
   <style>
-    body { font-family: Arial; text-align: center; margin: 40px; background: #f9f9f9; }
-    table { margin: auto; border-collapse: collapse; width: 80%; }
-    th, td { border: 1px solid #ccc; padding: 10px; }
-    input[type="number"] { width: 60px; }
-    button { padding: 10px 20px; margin-top: 20px; }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      text-align: center;
+      padding: 20px;
+    }
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+      width: 80%;
+      background-color: #fff;
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #ccc;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
+  <h1>📋 جدول بيانات JSON</h1>
 
-  <h2>📊 جدول البيانات</h2>
   <table id="data-table">
     <thead>
       <tr>
-        <th>أ</th><th>ب</th><th>ج</th><th>د</th><th>هـ</th>
+        <th>a</th>
+        <th>b</th>
+        <th>c</th>
+        <th>d</th>
+        <th>e</th>
       </tr>
     </thead>
     <tbody id="table-body">
-      <!-- الصفوف ستُضاف هنا -->
+      <!-- البيانات من JSON ستظهر هنا -->
     </tbody>
   </table>
 
-  <div style="margin-top: 30px;">
-    <input type="number" id="a" placeholder="أ">
-    <input type="number" id="b" placeholder="ب">
-    <input type="number" id="c" placeholder="ج">
-    <input type="number" id="d" placeholder="د">
-    <input type="number" id="e" placeholder="هـ">
-    <br><br>
-    <button onclick="addRow()">➕ إضافة صف</button>
-    <button onclick="sendData()">💾 حفظ البيانات</button>
+  <h3>➕ إضافة صف جديد:</h3>
+  <div id="form">
+    <input type="number" id="a" placeholder="a">
+    <input type="number" id="b" placeholder="b">
+    <input type="number" id="c" placeholder="c">
+    <input type="number" id="d" placeholder="d">
+    <input type="number" id="e" placeholder="e">
+    <br>
+    <button onclick="addRow()">💾 حفظ الصف</button>
   </div>
 
-  <p id="status"></p>
-
   <script>
-    const tableData = [];
+    const webhookUrl = "https://eoa55rhnxnvemi7.m.pipedream.net";
 
-    function addRow() {
-      const a = parseInt(document.getElementById('a').value);
-      const b = parseInt(document.getElementById('b').value);
-      const c = parseInt(document.getElementById('c').value);
-      const d = parseInt(document.getElementById('d').value);
-      const e = parseInt(document.getElementById('e').value);
+    let data = [];
 
-      if (isNaN(a) || isNaN(b) || isNaN(c) || isNaN(d) || isNaN(e)) {
-        alert("الرجاء ملء كل الخانات بأرقام");
-        return;
-      }
+    // جلب البيانات من GitHub (التجريبية)
+    fetch("https://raw.githubusercontent.com/gity678/static/main/data.json")
+      .then(res => res.json())
+      .then(json => {
+        data = json;
+        renderTable();
+      });
 
-      const row = { a, b, c, d, e };
-      tableData.push(row);
-
-      const rowHTML = `<tr><td>${a}</td><td>${b}</td><td>${c}</td><td>${d}</td><td>${e}</td></tr>`;
-      document.getElementById("table-body").innerHTML += rowHTML;
-
-      // إعادة تعيين الحقول
-      ['a','b','c','d','e'].forEach(id => document.getElementById(id).value = '');
+    function renderTable() {
+      const tbody = document.getElementById("table-body");
+      tbody.innerHTML = "";
+      data.forEach(row => {
+        const tr = document.createElement("tr");
+        for (let key of ["a", "b", "c", "d", "e"]) {
+          const td = document.createElement("td");
+          td.textContent = row[key];
+          tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+      });
     }
 
-    async function sendData() {
-      const status = document.getElementById("status");
-      status.innerText = "📤 يتم الإرسال...";
+    function addRow() {
+      const a = parseInt(document.getElementById("a").value);
+      const b = parseInt(document.getElementById("b").value);
+      const c = parseInt(document.getElementById("c").value);
+      const d = parseInt(document.getElementById("d").value);
+      const e = parseInt(document.getElementById("e").value);
 
-      const webhookUrl = "https://eoa55rhnxnvemi7.m.pipedream.net"; // رابط Webhook الخاص بك
+      const newRow = { a, b, c, d, e };
+      data.push(newRow);
+      renderTable();
 
-      try {
-        const res = await fetch(webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(tableData)
-        });
+      // إرسال البيانات المحدثة إلى Pipedream
+      fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      }).then(() => {
+        alert("✅ تم إرسال البيانات إلى الخادم بنجاح");
+      }).catch(() => {
+        alert("❌ فشل في الإرسال إلى الخادم");
+      });
 
-        if (res.ok) {
-          status.innerText = "✅ تم حفظ البيانات بنجاح!";
-        } else {
-          status.innerText = "❌ فشل في إرسال البيانات إلى Webhook.";
-        }
-      } catch (err) {
-        status.innerText = "❌ حدث خطأ أثناء الإرسال.";
-      }
+      // تفريغ الخانات
+      document.getElementById("a").value = "";
+      document.getElementById("b").value = "";
+      document.getElementById("c").value = "";
+      document.getElementById("d").value = "";
+      document.getElementById("e").value = "";
     }
   </script>
 </body>

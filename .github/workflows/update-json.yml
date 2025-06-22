@@ -1,22 +1,29 @@
-function sendToGitHub(data) {
-  fetch("https://api.github.com/repos/gity678/static/dispatches", {
-    method: "POST",
-    headers: {
-      "Accept": "application/vnd.github.everest-preview+json",
-      "Authorization": "Bearer ghp_توكن_شخصي_هنا",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      event_type: "update-data",
-      client_payload: {
-        json: JSON.stringify(data, null, 2)
-      }
-    })
-  }).then(res => {
-    if (res.ok) {
-      alert("✅ تم إرسال البيانات إلى GitHub");
-    } else {
-      alert("❌ فشل الإرسال إلى GitHub");
-    }
-  });
-}
+name: Update data.json
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [update-data]
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Run update script
+        run: |
+          echo "$DATA_JSON" > data.json
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          git commit -m "✅ تحديث تلقائي للبيانات"
+          git push
+        env:
+          DATA_JSON: ${{ github.event.client_payload.json }}

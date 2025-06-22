@@ -2,71 +2,67 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>جدول بيانات</title>
+  <title>📊 تعديل البيانات عبر GitHub Actions</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f0f0f0;
-      text-align: center;
+      background-color: #f4f4f4;
       padding: 20px;
+      text-align: center;
     }
     table {
       margin: 20px auto;
       border-collapse: collapse;
-      width: 80%;
-      background-color: #fff;
+      width: 90%;
+      background: white;
     }
     th, td {
-      padding: 12px;
       border: 1px solid #ccc;
+      padding: 10px;
     }
     input {
-      width: 100%;
-      padding: 8px;
-      box-sizing: border-box;
+      width: 80px;
+      padding: 5px;
+      margin: 5px;
     }
     button {
       padding: 10px 20px;
       margin-top: 10px;
+      background-color: #28a745;
+      color: white;
+      border: none;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h1>📋 جدول بيانات JSON</h1>
+
+  <h2>📋 جدول البيانات</h2>
 
   <table id="data-table">
     <thead>
       <tr>
-        <th>a</th>
-        <th>b</th>
-        <th>c</th>
-        <th>d</th>
-        <th>e</th>
+        <th>a</th><th>b</th><th>c</th><th>d</th><th>e</th>
       </tr>
     </thead>
     <tbody id="table-body">
-      <!-- البيانات من JSON ستظهر هنا -->
+      <!-- سيتم ملء البيانات -->
     </tbody>
   </table>
 
-  <h3>➕ إضافة صف جديد:</h3>
-  <div id="form">
-    <input type="number" id="a" placeholder="a">
-    <input type="number" id="b" placeholder="b">
-    <input type="number" id="c" placeholder="c">
-    <input type="number" id="d" placeholder="d">
-    <input type="number" id="e" placeholder="e">
-    <br>
-    <button onclick="addRow()">💾 حفظ الصف</button>
-  </div>
+  <h3>➕ أضف صف جديد</h3>
+  <input type="number" id="a" placeholder="a">
+  <input type="number" id="b" placeholder="b">
+  <input type="number" id="c" placeholder="c">
+  <input type="number" id="d" placeholder="d">
+  <input type="number" id="e" placeholder="e">
+  <br>
+  <button onclick="addRow()">💾 حفظ الصف</button>
 
   <script>
-    const webhookUrl = "https://eoa55rhnxnvemi7.m.pipedream.net";
-
     let data = [];
 
-    // جلب البيانات من GitHub (التجريبية)
+    // تحميل البيانات الحالية من GitHub
     fetch("https://raw.githubusercontent.com/gity678/static/main/data.json")
       .then(res => res.json())
       .then(json => {
@@ -79,44 +75,52 @@
       tbody.innerHTML = "";
       data.forEach(row => {
         const tr = document.createElement("tr");
-        for (let key of ["a", "b", "c", "d", "e"]) {
+        ["a", "b", "c", "d", "e"].forEach(key => {
           const td = document.createElement("td");
           td.textContent = row[key];
           tr.appendChild(td);
-        }
+        });
         tbody.appendChild(tr);
       });
     }
 
     function addRow() {
-      const a = parseInt(document.getElementById("a").value);
-      const b = parseInt(document.getElementById("b").value);
-      const c = parseInt(document.getElementById("c").value);
-      const d = parseInt(document.getElementById("d").value);
-      const e = parseInt(document.getElementById("e").value);
+      const row = {
+        a: parseInt(document.getElementById("a").value),
+        b: parseInt(document.getElementById("b").value),
+        c: parseInt(document.getElementById("c").value),
+        d: parseInt(document.getElementById("d").value),
+        e: parseInt(document.getElementById("e").value),
+      };
 
-      const newRow = { a, b, c, d, e };
-      data.push(newRow);
+      data.push(row);
       renderTable();
+      sendToGitHub(data);
+    }
 
-      // إرسال البيانات المحدثة إلى Pipedream
-      fetch(webhookUrl, {
+    function sendToGitHub(data) {
+      fetch("https://api.github.com/repos/gity678/static/dispatches", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      }).then(() => {
-        alert("✅ تم إرسال البيانات إلى الخادم بنجاح");
-      }).catch(() => {
-        alert("❌ فشل في الإرسال إلى الخادم");
+        headers: {
+          "Accept": "application/vnd.github.everest-preview+json",
+          "Authorization": "Bearer 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",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          event_type: "update-data",
+          client_payload: {
+            json: JSON.stringify(data, null, 2)
+          }
+        })
+      }).then(res => {
+        if (res.ok) {
+          alert("✅ تم إرسال البيانات إلى GitHub");
+        } else {
+          alert("❌ فشل في الإرسال إلى GitHub");
+        }
       });
-
-      // تفريغ الخانات
-      document.getElementById("a").value = "";
-      document.getElementById("b").value = "";
-      document.getElementById("c").value = "";
-      document.getElementById("d").value = "";
-      document.getElementById("e").value = "";
     }
   </script>
+
 </body>
 </html>

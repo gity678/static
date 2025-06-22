@@ -4,51 +4,48 @@
   <meta charset="UTF-8" />
   <title>تحديث بيانات data.json</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 700px;
-      margin: 30px auto;
-      background: #f0f0f0;
-      padding: 20px;
-      border-radius: 10px;
-      direction: rtl;
-      text-align: right;
+    body{
+      font-family:Arial,sans-serif;
+      max-width:700px;
+      margin:30px auto;
+      background:#f0f0f0;
+      padding:20px;
+      border-radius:10px;
+      direction:rtl;
+      text-align:right
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 15px;
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-bottom:15px
     }
-    th, td {
-      border: 1px solid #999;
-      padding: 8px;
-      text-align: center;
+    th,td{
+      border:1px solid #999;
+      padding:8px;
+      text-align:center
     }
-    input[type=number] {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 6px;
-      font-size: 16px;
-      text-align: center;
+    input[type=number]{
+      width:100%;
+      box-sizing:border-box;
+      padding:6px;
+      font-size:16px;
+      text-align:center
     }
-    button {
-      padding: 10px 25px;
-      font-size: 18px;
-      cursor: pointer;
-      background-color: #007bff;
-      border: none;
-      color: white;
-      border-radius: 5px;
+    button{
+      padding:10px 25px;
+      font-size:18px;
+      cursor:pointer;
+      background-color:#007bff;
+      border:none;
+      color:#fff;
+      border-radius:5px
     }
-    #status {
-      margin-top: 15px;
-      font-weight: bold;
-    }
+    #status{margin-top:15px;font-weight:bold}
   </style>
 </head>
 <body>
 
-  <h1>تحديث بيانات ملف data.json</h1>
+  <h1>تحديث ملف <code>data.json</code></h1>
 
   <table id="dataTable">
     <thead>
@@ -69,66 +66,47 @@
     </tbody>
   </table>
 
-  <button id="sendBtn">ارسل البيانات إلى GitHub</button>
+  <button id="sendBtn">أرسل البيانات إلى GitHub</button>
 
   <div id="status"></div>
 
 <script>
-  // التوكن الخاص بك (احذر، هذا يظهر في الكود!)
-  const token = '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';
+  /* ⚠️ التوكن مضمَّن في الكود وسيكون مرئياً لمن يطّلع على المصدر */
+  const token = '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';
 
   document.getElementById('sendBtn').addEventListener('click', () => {
     const status = document.getElementById('status');
-    const table = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
-    const rows = table.rows;
-    const dataArray = [];
+    const rows   = document.querySelector('#dataTable tbody').rows;
+    const data   = [];
 
-    for(let i=0; i < rows.length; i++) {
-      const cells = rows[i].cells;
-      const num1 = cells[0].querySelector('input').value.trim();
-      const num2 = cells[1].querySelector('input').value.trim();
-
-      if(num1 === '' || num2 === '') {
-        status.textContent = `خطأ: الرجاء ملء كل الحقول في الصف ${i+1}`;
+    for (let i = 0; i < rows.length; i++) {
+      const num1 = rows[i].cells[0].querySelector('input').value.trim();
+      const num2 = rows[i].cells[1].querySelector('input').value.trim();
+      if (!num1 || !num2) {
+        status.textContent = `خطأ: تأكد من ملء كل خانات الصف ${i+1}`;
         return;
       }
-
-      // نجمع كل صف ككائن
-      dataArray.push({
-        id: i+1,
-        num1: Number(num1),
-        num2: Number(num2)
-      });
+      data.push({ id: i + 1, num1: Number(num1), num2: Number(num2) });
     }
 
-    const jsonData = JSON.stringify(dataArray, null, 2);
-
-    status.textContent = 'جاري إرسال البيانات إلى GitHub...';
+    status.textContent = 'جارٍ الإرسال …';
 
     fetch('https://api.github.com/repos/gity678/static/dispatches', {
       method: 'POST',
       headers: {
-        'Accept': 'application/vnd.github+json',
+        'Accept'       : 'application/vnd.github+json',
         'Authorization': 'token ' + token,
-        'Content-Type': 'application/json'
+        'Content-Type' : 'application/json'
       },
       body: JSON.stringify({
-        event_type: 'update_data',
-        client_payload: { new_data: jsonData }
+        event_type   : 'update_data',
+        client_payload: { new_data: JSON.stringify(data) }
       })
     })
-    .then(res => {
-      if (res.ok) {
-        status.textContent = 'تم إرسال البيانات بنجاح! تحقق من تحديث data.json في المستودع.';
-      } else {
-        res.text().then(text => {
-          status.textContent = 'خطأ في الإرسال: ' + text;
-        });
-      }
-    })
-    .catch(err => {
-      status.textContent = 'خطأ في الاتصال: ' + err.message;
-    });
+    .then(r => r.ok
+        ? (status.textContent = '✅ تم الإرسال بنجاح! انتظر بضع ثوانٍ لتحديث data.json')
+        : r.text().then(t => status.textContent = 'خطأ API: ' + t))
+    .catch(e => status.textContent = 'خطأ اتصال: ' + e.message);
   });
 </script>
 

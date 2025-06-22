@@ -1,126 +1,105 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>📊 تعديل البيانات عبر GitHub Actions</title>
+  <meta charset="UTF-8" />
+  <title>تحديث بيانات data.json</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
+      max-width: 600px;
+      margin: 30px auto;
+      background: #f0f0f0;
       padding: 20px;
-      text-align: center;
+      border-radius: 10px;
+      direction: rtl;
+      text-align: right;
     }
-    table {
-      margin: 20px auto;
-      border-collapse: collapse;
-      width: 90%;
-      background: white;
-    }
-    th, td {
-      border: 1px solid #ccc;
+    textarea, input {
+      width: 100%;
+      font-family: monospace;
+      font-size: 14px;
+      margin-bottom: 10px;
       padding: 10px;
+      box-sizing: border-box;
     }
-    input {
-      width: 80px;
-      padding: 5px;
-      margin: 5px;
+    textarea {
+      height: 200px;
+      resize: vertical;
     }
     button {
       padding: 10px 20px;
-      margin-top: 10px;
-      background-color: #28a745;
-      color: white;
-      border: none;
+      font-size: 16px;
       cursor: pointer;
+    }
+    #status {
+      margin-top: 15px;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
 
-  <h2>📋 جدول البيانات</h2>
+  <h1>تحديث بيانات ملف data.json</h1>
 
-  <table id="data-table">
-    <thead>
-      <tr>
-        <th>a</th><th>b</th><th>c</th><th>d</th><th>e</th>
-      </tr>
-    </thead>
-    <tbody id="table-body">
-      <!-- سيتم ملء البيانات -->
-    </tbody>
-  </table>
+  <label for="tokenInput">أدخل التوكن الشخصي (PAT) من GitHub:</label>
+  <input id="tokenInput" type="password" placeholder="ghp_xxx..." />
 
-  <h3>➕ أضف صف جديد</h3>
-  <input type="number" id="a" placeholder="a">
-  <input type="number" id="b" placeholder="b">
-  <input type="number" id="c" placeholder="c">
-  <input type="number" id="d" placeholder="d">
-  <input type="number" id="e" placeholder="e">
-  <br>
-  <button onclick="addRow()">💾 حفظ الصف</button>
+  <label for="jsonInput">أدخل بيانات JSON لتحديث الملف:</label>
+  <textarea id="jsonInput">[
+  { "id": 1, "name": "تجريبي 1", "value": 100 },
+  { "id": 2, "name": "تجريبي 2", "value": 200 }
+]</textarea>
 
-  <script>
-    let data = [];
+  <button id="updateBtn">ارسل التحديث إلى GitHub</button>
 
-    // تحميل البيانات الحالية من GitHub
-    fetch("https://raw.githubusercontent.com/gity678/static/main/data.json")
-      .then(res => res.json())
-      .then(json => {
-        data = json;
-        renderTable();
-      });
+  <div id="status"></div>
 
-    function renderTable() {
-      const tbody = document.getElementById("table-body");
-      tbody.innerHTML = "";
-      data.forEach(row => {
-        const tr = document.createElement("tr");
-        ["a", "b", "c", "d", "e"].forEach(key => {
-          const td = document.createElement("td");
-          td.textContent = row[key];
-          tr.appendChild(td);
+<script>
+  document.getElementById('updateBtn').addEventListener('click', () => {
+    const token = document.getElementById('tokenInput').value.trim();
+    const input = document.getElementById('jsonInput').value.trim();
+    const status = document.getElementById('status');
+
+    if (!token) {
+      status.textContent = 'الرجاء إدخال التوكن الشخصي.';
+      return;
+    }
+
+    try {
+      JSON.parse(input);
+    } catch (e) {
+      status.textContent = 'خطأ: بيانات غير صالحة JSON!';
+      return;
+    }
+
+    status.textContent = 'جاري الإرسال...';
+
+    fetch('https://api.github.com/repos/gity678/static/dispatches', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/vnd.github+json',
+        'Authorization': 'token ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        event_type: 'update_data',
+        client_payload: { new_data: input }
+      })
+    })
+    .then(res => {
+      if (res.ok) {
+        status.textContent = 'تم الإرسال بنجاح! انتظر التحديث في المستودع.';
+      } else {
+        res.text().then(text => {
+          status.textContent = 'خطأ في الإرسال: ' + text;
         });
-        tbody.appendChild(tr);
-      });
-    }
-
-    function addRow() {
-      const row = {
-        a: parseInt(document.getElementById("a").value),
-        b: parseInt(document.getElementById("b").value),
-        c: parseInt(document.getElementById("c").value),
-        d: parseInt(document.getElementById("d").value),
-        e: parseInt(document.getElementById("e").value),
-      };
-
-      data.push(row);
-      renderTable();
-      sendToGitHub(data);
-    }
-
-    function sendToGitHub(data) {
-      fetch("https://api.github.com/repos/gity678/static/dispatches", {
-        method: "POST",
-        headers: {
-          "Accept": "application/vnd.github.everest-preview+json",
-          "Authorization": "Bearer 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",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          event_type: "update-data",
-          client_payload: {
-            json: JSON.stringify(data, null, 2)
-          }
-        })
-      }).then(res => {
-        if (res.ok) {
-          alert("✅ تم إرسال البيانات إلى GitHub");
-        } else {
-          alert("❌ فشل في الإرسال إلى GitHub");
-        }
-      });
-    }
-  </script>
+      }
+    })
+    .catch(err => {
+      status.textContent = 'خطأ في الاتصال: ' + err.message;
+    });
+  });
+</script>
 
 </body>
 </html>

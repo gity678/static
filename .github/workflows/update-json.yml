@@ -1,29 +1,26 @@
 name: Update data.json
 
 on:
-  workflow_dispatch:
   repository_dispatch:
     types: [update-data]
 
 jobs:
   update:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run update script
+      - name: Update data.json
         run: |
           echo "$DATA_JSON" > data.json
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data.json
-          git commit -m "✅ تحديث تلقائي للبيانات"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json || echo "nothing to add"
+          git commit -m "Update data.json via dispatch" || echo "nothing to commit"
           git push
         env:
           DATA_JSON: ${{ github.event.client_payload.json }}

@@ -6,7 +6,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 600px;
+      max-width: 700px;
       margin: 30px auto;
       background: #f0f0f0;
       padding: 20px;
@@ -14,22 +14,31 @@
       direction: rtl;
       text-align: right;
     }
-    textarea, input {
+    table {
       width: 100%;
-      font-family: monospace;
-      font-size: 14px;
-      margin-bottom: 10px;
-      padding: 10px;
-      box-sizing: border-box;
+      border-collapse: collapse;
+      margin-bottom: 15px;
     }
-    textarea {
-      height: 200px;
-      resize: vertical;
+    th, td {
+      border: 1px solid #999;
+      padding: 8px;
+      text-align: center;
+    }
+    input[type=number] {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 6px;
+      font-size: 16px;
+      text-align: center;
     }
     button {
-      padding: 10px 20px;
-      font-size: 16px;
+      padding: 10px 25px;
+      font-size: 18px;
       cursor: pointer;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      border-radius: 5px;
     }
     #status {
       margin-top: 15px;
@@ -41,38 +50,60 @@
 
   <h1>تحديث بيانات ملف data.json</h1>
 
-  <label for="tokenInput">أدخل التوكن الشخصي (PAT) من GitHub:</label>
-  <input id="tokenInput" type="password" placeholder="ghp_xxx..." />
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>الرقم 1</th>
+        <th>الرقم 2</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><input type="number" value="10" /></td>
+        <td><input type="number" value="20" /></td>
+      </tr>
+      <tr>
+        <td><input type="number" value="30" /></td>
+        <td><input type="number" value="40" /></td>
+      </tr>
+    </tbody>
+  </table>
 
-  <label for="jsonInput">أدخل بيانات JSON لتحديث الملف:</label>
-  <textarea id="jsonInput">[
-  { "id": 1, "name": "تجريبي 1", "value": 100 },
-  { "id": 2, "name": "تجريبي 2", "value": 200 }
-]</textarea>
-
-  <button id="updateBtn">ارسل التحديث إلى GitHub</button>
+  <button id="sendBtn">ارسل البيانات إلى GitHub</button>
 
   <div id="status"></div>
 
 <script>
-  document.getElementById('updateBtn').addEventListener('click', () => {
-    const token = document.getElementById('tokenInput').value.trim();
-    const input = document.getElementById('jsonInput').value.trim();
+  // التوكن الخاص بك (احذر، هذا يظهر في الكود!)
+  const token = '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';
+
+  document.getElementById('sendBtn').addEventListener('click', () => {
     const status = document.getElementById('status');
+    const table = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+    const rows = table.rows;
+    const dataArray = [];
 
-    if (!token) {
-      status.textContent = 'الرجاء إدخال التوكن الشخصي.';
-      return;
+    for(let i=0; i < rows.length; i++) {
+      const cells = rows[i].cells;
+      const num1 = cells[0].querySelector('input').value.trim();
+      const num2 = cells[1].querySelector('input').value.trim();
+
+      if(num1 === '' || num2 === '') {
+        status.textContent = `خطأ: الرجاء ملء كل الحقول في الصف ${i+1}`;
+        return;
+      }
+
+      // نجمع كل صف ككائن
+      dataArray.push({
+        id: i+1,
+        num1: Number(num1),
+        num2: Number(num2)
+      });
     }
 
-    try {
-      JSON.parse(input);
-    } catch (e) {
-      status.textContent = 'خطأ: بيانات غير صالحة JSON!';
-      return;
-    }
+    const jsonData = JSON.stringify(dataArray, null, 2);
 
-    status.textContent = 'جاري الإرسال...';
+    status.textContent = 'جاري إرسال البيانات إلى GitHub...';
 
     fetch('https://api.github.com/repos/gity678/static/dispatches', {
       method: 'POST',
@@ -83,12 +114,12 @@
       },
       body: JSON.stringify({
         event_type: 'update_data',
-        client_payload: { new_data: input }
+        client_payload: { new_data: jsonData }
       })
     })
     .then(res => {
       if (res.ok) {
-        status.textContent = 'تم الإرسال بنجاح! انتظر التحديث في المستودع.';
+        status.textContent = 'تم إرسال البيانات بنجاح! تحقق من تحديث data.json في المستودع.';
       } else {
         res.text().then(text => {
           status.textContent = 'خطأ في الإرسال: ' + text;

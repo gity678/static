@@ -21,6 +21,6 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add data.json || echo "nothing to add"
           git commit -m "Update data.json via dispatch" || echo "nothing to commit"
-          git push
+          git push origin HEAD:main
         env:
           DATA_JSON: ${{ github.event.client_payload.json }}

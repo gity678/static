@@ -1,0 +1,22 @@
+function sendToGitHub(data) {
+  fetch("https://api.github.com/repos/gity678/static/dispatches", {
+    method: "POST",
+    headers: {
+      "Accept": "application/vnd.github.everest-preview+json",
+      "Authorization": "Bearer ghp_توكن_شخصي_هنا",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      event_type: "update-data",
+      client_payload: {
+        json: JSON.stringify(data, null, 2)
+      }
+    })
+  }).then(res => {
+    if (res.ok) {
+      alert("✅ تم إرسال البيانات إلى GitHub");
+    } else {
+      alert("❌ فشل الإرسال إلى GitHub");
+    }
+  });
+}
